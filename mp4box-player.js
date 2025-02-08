@@ -379,7 +379,7 @@ var cdnmp4 = (function (exports, mp4box) {
       /** @private Only onError is callable */
       this.onErrorCallback = null;
 
-      this.SHOW_LOGS = true;
+      this.SHOW_LOGS = false;
       this.showLogs = (shouldShowLogs) => (this.SHOW_LOGS = shouldShowLogs);
 
       this.onWindowLoad();
