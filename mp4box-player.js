@@ -21,62 +21,50 @@ var cdnmp4 = (function (exports, mp4box) {
       this.abortController = new AbortController();
       this.bufferFetcher = null;
       this.videoElement = videoElement;
-      if (!this.videoElement)
-        throw new Error("No video element provided to Downloader");
+      if (!this.videoElement) throw new Error("No video element provided to Downloader");
     }
-
-    setDownloadTimeoutCallback = (callback) => {
+    setDownloadTimeoutCallback = callback => {
       this.downloadTimeoutCallback = callback;
       return this;
     };
-
     reset = () => {
       this.chunkStart = 0;
       this.totalLength = 0;
       this.eof = false;
       return this;
     };
-
-    setRealTime = (_realtime) => {
+    setRealTime = _realtime => {
       this.realtime = _realtime;
       return this;
     };
-
-    setChunkSize = (_size) => {
+    setChunkSize = _size => {
       this.chunkSize = _size;
       return this;
     };
-
-    setChunkStart = (_start) => {
+    setChunkStart = _start => {
       this.chunkStart = _start;
       this.eof = false;
       return this;
     };
-
-    setInterval = (_timeout) => {
+    setInterval = _timeout => {
       this.chunkTimeout = _timeout;
       return this;
     };
-
-    setUrl = (_url) => {
+    setUrl = _url => {
       this.url = _url;
       return this;
     };
-
-    setCallback = (_callback) => {
+    setCallback = _callback => {
       this.callback = _callback;
       return this;
     };
-
     isStopped = () => {
       return !this.isActive;
     };
-
     getFileLength = () => {
       return this.totalLength;
     };
-
-    setCustomTotalLength = (customTotalLength) => {
+    setCustomTotalLength = customTotalLength => {
       this.customTotalLength = customTotalLength;
     };
 
@@ -90,23 +78,20 @@ var cdnmp4 = (function (exports, mp4box) {
      *   - {AbortSignal} abortSignal - An AbortSignal object that allows you to abort the fetch.
      *   The fetcher function is expected to return a Promise that resolves to the fetched data (e.g., ArrayBuffer and totalLength of video file. i.e. it will return {buffer, totalLength} object
      */
-    setBufferFetcher = (fetcher) => {
+    setBufferFetcher = fetcher => {
       this.bufferFetcher = fetcher;
     };
-
     getFile = () => {
       this.abortController?.abort();
-
       var dl = this;
       if (dl.totalLength && this.chunkStart >= dl.totalLength) {
         dl.eof = true;
       }
       if (dl.eof === true) {
-        Log.info("Downloader", "File download done.");
+        mp4box.Log.info("Downloader", "File download done.");
         this.callback(null, true);
         return;
       }
-
       const defaultBufferFetcher = (start, end, signal) => {
         var range = null;
         var maxRange;
@@ -166,99 +151,72 @@ var cdnmp4 = (function (exports, mp4box) {
             throw error;
           });
       };
-
       var controller = new AbortController();
       var signal = controller.signal;
       this.abortController = controller;
-
       const start = this.chunkStart;
       const end = start + this.chunkSize - 1;
-      // console.log("START = ", start, "END = ", end, "chunksize", this.chunkSize);
-      const bufferFetcherThenable = this.bufferFetcher
-        ? this.bufferFetcher(start, end, signal)
-        : defaultBufferFetcher(start, end, signal);
-
-      bufferFetcherThenable
-        .then(async function ({ buffer: buf, totalLength }) {
-          let buffer = buf;
-
-          if (totalLength) dl.totalLength = totalLength;
-          else throw new Error("file byte length not available");
-
-          Log.info(
-            "Downloader",
-            "Received data range. ByteLength: " + buffer.byteLength
-          );
-          const endByte = start + buffer.byteLength - 1;
-          dl.eof = endByte >= dl.totalLength;
-          // dl.eof =
-          // buffer.byteLength !== dl.chunkSize ||
-          // buffer.byteLength === dl.totalLength
-          if (dl.eof) {
-            console.log(
-              `EOF Reason: File Length reached, Last byte: ${endByte.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`
-            );
-            // if (buffer.byteLength !== dl.chunkSize)
-            //   console.log(
-            //     `EOF Reason: Received Buffer length didn't match with Expected Buffer Length`,
-            //     `Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.chunkSize.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`
-            //   )
-            // else if (buffer.byteLength === dl.totalLength)
-            //   console.log(
-            //     `EOF Reason: Total Length reached, Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.totalLength.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`
-            //   )
-          } else Log.info(`EOF:${dl.eof}`, `Received Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.chunkSize.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`);
-
+      const bufferFetcherThenable = this.bufferFetcher ? this.bufferFetcher(start, end, signal) : defaultBufferFetcher(start, end, signal);
+      bufferFetcherThenable.then(async function (_ref) {
+        let {
+          buffer: buf,
+          totalLength
+        } = _ref;
+        let buffer = buf;
+        if (totalLength) dl.totalLength = totalLength;else throw new Error("file byte length not available");
+        mp4box.Log.info("Downloader", "Received data range. ByteLength: " + buffer.byteLength);
+        const endByte = start + buffer.byteLength - 1;
+        dl.eof = endByte >= dl.totalLength;
+        // dl.eof =
+        // buffer.byteLength !== dl.chunkSize ||
+        // buffer.byteLength === dl.totalLength
+        if (dl.eof) {
+          console.log(`EOF Reason: File Length reached, Last byte: ${endByte.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`);
+          // if (buffer.byteLength !== dl.chunkSize)
+          //   console.log(
+          //     `EOF Reason: Received Buffer length didn't match with Expected Buffer Length`,
+          //     `Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.chunkSize.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`
+          //   )
+          // else if (buffer.byteLength === dl.totalLength)
+          //   console.log(
+          //     `EOF Reason: Total Length reached, Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.totalLength.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`
+          //   )
+        } else mp4box.Log.info(`EOF:${dl.eof}`, `Received Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.chunkSize.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`);
+        buffer.fileStart = dl.chunkStart;
+        if (!buffer.fileStart) {
+          buffer = buffer.slice(0);
           buffer.fileStart = dl.chunkStart;
-
-          if (!buffer.fileStart) {
-            buffer = buffer.slice(0);
-            buffer.fileStart = dl.chunkStart;
-          }
-
-          dl.callback(buffer, dl.eof);
-
-          if (dl.isActive === true && dl.eof === false) {
-            var timeoutDuration = 0;
-            if (!dl.realtime) {
-              timeoutDuration = dl.chunkTimeout;
-            } else {
-              timeoutDuration = dl.computeWaitingTimeFromBuffer(dl.videoElement);
-            }
-            if (dl.setDownloadTimeoutCallback)
-              dl.setDownloadTimeoutCallback(timeoutDuration);
-
-            Log.info(
-              "Downloader",
-              "Next download scheduled in " + Math.floor(timeoutDuration) + " ms."
-            );
-
-            dl.timeoutID = window.setTimeout(
-              dl.getFile.bind(dl),
-              timeoutDuration
-            );
+        }
+        dl.callback(buffer, dl.eof);
+        if (dl.isActive === true && dl.eof === false) {
+          var timeoutDuration = 0;
+          if (!dl.realtime) {
+            timeoutDuration = dl.chunkTimeout;
           } else {
-            dl.isActive = false;
+            timeoutDuration = dl.computeWaitingTimeFromBuffer(dl.videoElement);
           }
-        })
-        .catch(function (error) {
-          if (error.name === "AbortError") {
-            console.info("Range request aborted.");
-          } else {
-            dl.callback(null, false, error);
-          }
-        });
+          if (dl.setDownloadTimeoutCallback) dl.setDownloadTimeoutCallback(timeoutDuration);
+          mp4box.Log.info("Downloader", "Next download scheduled in " + Math.floor(timeoutDuration) + " ms.");
+          dl.timeoutID = window.setTimeout(dl.getFile.bind(dl), timeoutDuration);
+        } else {
+          dl.isActive = false;
+        }
+      }).catch(function (error) {
+        if (error.name === "AbortError") {
+          console.info("Range request aborted.");
+        } else {
+          dl.callback(null, false, error);
+        }
+      });
     };
-
     start = () => {
-      Log.info("Downloader", "Starting file download");
+      mp4box.Log.info("Downloader", "Starting file download");
       this.chunkStart = 0;
       this.resume();
       return this;
     };
-
     resume = () => {
-      Log.info("Downloader", "Resuming file download");
+      mp4box.Log.info("Downloader", "Resuming file download");
       this.isActive = true;
       if (this.chunkSize === 0) {
         this.chunkSize = Infinity;
@@ -266,11 +224,9 @@ var cdnmp4 = (function (exports, mp4box) {
       this.getFile();
       return this;
     };
-
     stop = () => {
       this.abortController?.abort();
-
-      Log.info("Downloader", "Stopping file download");
+      mp4box.Log.info("Downloader", "Stopping file download");
       this.isActive = false;
       if (this.timeoutID) {
         window.clearTimeout(this.timeoutID);
@@ -278,7 +234,6 @@ var cdnmp4 = (function (exports, mp4box) {
       }
       return this;
     };
-
     computeWaitingTimeFromBuffer(video) {
       var ms = video.ms;
       var sb;
@@ -291,7 +246,7 @@ var cdnmp4 = (function (exports, mp4box) {
       var wait;
       var duration;
       /* computing the intersection of the buffered values of all active sourcebuffers around the current time, 
-  	   may already be done by the browser when calling video.buffered (to be checked: TODO) */
+      may already be done by the browser when calling video.buffered (to be checked: TODO) */
       for (var i = 0; i < ms.activeSourceBuffers.length; i++) {
         sb = ms.activeSourceBuffers[i];
         for (var j = 0; j < sb.buffered.length; j++) {
@@ -309,31 +264,15 @@ var cdnmp4 = (function (exports, mp4box) {
       }
       duration = minEndRange - maxStartRange;
       ratio = (currentTime - maxStartRange) / duration;
-      Log.info(
-        "Demo",
-        "Playback position (" +
-          Log.getDurationString(currentTime) +
-          ") in current buffer [" +
-          Log.getDurationString(maxStartRange) +
-          "," +
-          Log.getDurationString(minEndRange) +
-          "]: " +
-          Math.floor(ratio * 100) +
-          "%"
-      );
+      mp4box.Log.info("Demo", "Playback position (" + mp4box.Log.getDurationString(currentTime) + ") in current buffer [" + mp4box.Log.getDurationString(maxStartRange) + "," + mp4box.Log.getDurationString(minEndRange) + "]: " + Math.floor(ratio * 100) + "%");
       if (ratio >= 3 / (playbackRate + 3)) {
-        Log.info("Demo", "Downloading immediately new data!");
+        mp4box.Log.info("Demo", "Downloading immediately new data!");
         // when the currentTime of the video is at more than 3/4 of the buffered range (for a playback rate of 1), immediately fetch a new buffer
         return 1; // return 1 ms (instead of 0) to be able to compute a non-infinite bitrate value
       } else {
         /* if not, wait for half (at playback rate of 1) of the remaining time in the buffer */
-        wait = (1000 * (minEndRange - currentTime)) / (2 * playbackRate);
-        Log.info(
-          "Demo",
-          "Waiting for " +
-            Log.getDurationString(wait, 1000) +
-            " s for the next download"
-        );
+        wait = 1000 * (minEndRange - currentTime) / (2 * playbackRate);
+        mp4box.Log.info("Demo", "Waiting for " + mp4box.Log.getDurationString(wait, 1000) + " s for the next download");
         return wait;
       }
     }
@@ -342,26 +281,30 @@ var cdnmp4 = (function (exports, mp4box) {
   class Mp4boxPlayer {
     constructor(videoElement, initialDownloadConfig, downloaderInstance) {
       this.config = {
-        url: "", // Video URL (not required if you are using your custom buffer fetcher)
-        segmentSize: 1000, // The size of each segment.
-        chunkSize: 1000000, // The size of each chunk.
-        chunkTimeout: 500, // The timeout for chunk downloads.
-        extractionSize: 1, // The size for extraction.
-        saveBuffer: false, // Save the buffers to disk.
-        ...initialDownloadConfig,
+        url: "",
+        // Video URL (not required if you are using your custom buffer fetcher)
+        segmentSize: 1000,
+        // The size of each segment.
+        chunkSize: 1000000,
+        // The size of each chunk.
+        chunkTimeout: 500,
+        // The timeout for chunk downloads.
+        extractionSize: 1,
+        // The size for extraction.
+        saveBuffer: false,
+        // Save the buffers to disk.
+        ...initialDownloadConfig
       };
-
       this.mp4boxfile;
       this.movieInfo;
       this.videoFps = 30; // Default value for fps to be used for segmentation samples 
       this.desiredChunkSize = 409600; // Default 400KB chunksize to start with
       this.SEGMENT_DURATION_SECS = 3; // 3sec default chunk duration.
 
-      if(!videoElement) {
+      if (!videoElement) {
         throw new Error("No video element provided to Mp4boxPlayer");
       }
       this.video = videoElement;
-
       this.downloader = downloaderInstance || new Downloader(videoElement);
       // this.downloader.setDownloadTimeoutCallback = this.setDownloadTimeout; // TODO: Find usage in this class?
       this.autoplay = false;
@@ -378,10 +321,8 @@ var cdnmp4 = (function (exports, mp4box) {
       this.onTrackInfoCallback = null;
       /** @private Only onError is callable */
       this.onErrorCallback = null;
-
       this.SHOW_LOGS = false;
-      this.showLogs = (shouldShowLogs) => (this.SHOW_LOGS = shouldShowLogs);
-
+      this.showLogs = shouldShowLogs => this.SHOW_LOGS = shouldShowLogs;
       this.onWindowLoad();
     }
 
@@ -392,7 +333,7 @@ var cdnmp4 = (function (exports, mp4box) {
      * @param {any} status - Represents boolean for "enabled" status, number for "value" status, string for "text" status.
      */
     /** @param {OnStatusChangeCallback} callback - Called when the status of a control changes */
-    onStatusChange = (callback) => {
+    onStatusChange = callback => {
       this.onStatusChangeCallback = callback;
     };
 
@@ -401,12 +342,12 @@ var cdnmp4 = (function (exports, mp4box) {
      * @param {Object} info
      */
     /** @param {OnInfoCallback} callback - Called when movieInfo is available */
-    onMovieInfo = (callback) => {
+    onMovieInfo = callback => {
       this.onMovieInfoCallback = callback;
     };
 
     /** @param {OnInfoCallback} callback - Called when trackInfo is available */
-    onTrackInfo = (callback) => {
+    onTrackInfo = callback => {
       this.onTrackInfoCallback = callback;
     };
 
@@ -417,7 +358,7 @@ var cdnmp4 = (function (exports, mp4box) {
      * @param {any} extraContext - Optional custom error message/data from Mp4boxPlayer.
      */
     /** @param {OnErrorCallback} callback - Called when the status of a control changes */
-    onError = (callback) => {
+    onError = callback => {
       this.onErrorCallback = callback;
     };
     /* Callback END */
@@ -433,13 +374,7 @@ var cdnmp4 = (function (exports, mp4box) {
         content = this.track.config;
       }
       content += this.text;
-      this.SHOW_LOGS &&
-        console.log(
-          "Video Time:",
-          this.video.currentTime,
-          "Processing cue for track " + this.track.track_id + " with:",
-          content
-        );
+      this.SHOW_LOGS && console.log("Video Time:", this.video.currentTime, "Processing cue for track " + this.track.track_id + " with:", content);
       // if (this.track.mime === "application/ecmascript") { // TODO: miss::subtitles
       //   var script = document.createElement("script");
       //   script.appendChild(document.createTextNode(content));
@@ -469,14 +404,12 @@ var cdnmp4 = (function (exports, mp4box) {
       this.video.addEventListener("seeking", this.onSeeking.bind(this));
       this.video.addEventListener("playing", this.onPlaying.bind(this));
     };
-
     removeVideoEventListeners = () => {
       this.SHOW_LOGS && console.log("removeVideoEventListeners");
       this.video.removeEventListener("seeking", this.onSeeking);
       this.video.removeEventListener("playing", this.onPlaying);
     };
-
-    onPlaying = (e) => {
+    onPlaying = e => {
       this.SHOW_LOGS && console.log("onPlaying");
       this.video.playing = true;
       if (this.video.onPlayCue) {
@@ -484,10 +417,8 @@ var cdnmp4 = (function (exports, mp4box) {
         this.video.onPlayCue = null;
       }
     };
-
     onSeeking(e) {
       this.SHOW_LOGS && console.log("onSeeking");
-
       var i, start, end;
       var seek_info;
       if (this.video.lastSeekTime !== this.video.currentTime) {
@@ -499,14 +430,9 @@ var cdnmp4 = (function (exports, mp4box) {
           }
         }
         /* Chrome fires twice the seeking event with the same value */
-        Log.info(
-          "Application",
-          "Seeking called to video time " +
-            Log.getDurationString(this.video.currentTime)
-        );
+        mp4box.Log.info("Application", "Seeking called to video time " + mp4box.Log.getDurationString(this.video.currentTime));
         this.downloader.stop();
         this.resetCues();
-
         seek_info = this.mp4boxfile.seek(this.video.currentTime, true);
         this.downloader.setChunkStart(seek_info.offset);
         this.downloader.resume();
@@ -526,13 +452,11 @@ var cdnmp4 = (function (exports, mp4box) {
         }
       }
     };
-
     onWindowLoad = () => {
       this.SHOW_LOGS && console.log("onWindowLoad");
       // TODO: If !video ...
-      // console.log("VIDEO = ", this.video);
-      this.video.addEventListener("error", (e) => {
-        Log.error("Video error", e);
+      this.video.addEventListener("error", e => {
+        mp4box.Log.error("Video error", e);
         this.onErrorCallback?.("Video error", e);
       });
       this.video.playing = false;
@@ -550,12 +474,9 @@ var cdnmp4 = (function (exports, mp4box) {
             video.playing = false;
           });
       */
-      if (this.video.videoTracks)
-        this.video.videoTracks.onchange = this.generateTrackInfo;
-      if (this.video.audioTracks)
-        this.video.audioTracks.onchange = this.generateTrackInfo;
-      if (this.video.textTracks)
-        this.video.textTracks.onchange = this.generateTrackInfo;
+      if (this.video.videoTracks) this.video.videoTracks.onchange = this.generateTrackInfo;
+      if (this.video.audioTracks) this.video.audioTracks.onchange = this.generateTrackInfo;
+      if (this.video.textTracks) this.video.textTracks.onchange = this.generateTrackInfo;
       this.reset();
 
       /* Loading Track Viewers 
@@ -601,7 +522,6 @@ var cdnmp4 = (function (exports, mp4box) {
     resetMediaSource = () => {
       this.SHOW_LOGS && console.log("resetMediaSource");
       if (this.video.ms) return;
-
       var mediaSource;
       mediaSource = new MediaSource();
       mediaSource.video = this.video;
@@ -615,24 +535,22 @@ var cdnmp4 = (function (exports, mp4box) {
         tt.mode = "disabled";
       }
     };
-
-    onSourceClose = (e) => {
+    onSourceClose = e => {
       this.SHOW_LOGS && console.log("onSourceClose");
       var ms = e.target;
       if (ms.video.error) {
         // TODO:
-        Log.error("MSE", "Source closed, video error: " + ms.video.error.code);
+        mp4box.Log.error("MSE", "Source closed, video error: " + ms.video.error.code);
         this.onErrorCallback?.(`MSE, Source closed, video error`, e);
       } else {
-        Log.info("MSE", "Source closed, no error");
+        mp4box.Log.info("MSE", "Source closed, no error");
       }
     };
-
-    onSourceOpen = (e) => {
+    onSourceOpen = e => {
       this.SHOW_LOGS && console.log("onSourceOpen");
       var ms = e.target;
-      Log.info("MSE", "Source opened");
-      Log.debug("MSE", ms);
+      mp4box.Log.info("MSE", "Source opened");
+      mp4box.Log.debug("MSE", ms);
     };
     /* Reset END */
 
@@ -644,7 +562,6 @@ var cdnmp4 = (function (exports, mp4box) {
         this.downloader.stop();
       }
     };
-
     play = () => {
       this.SHOW_LOGS && console.log("play");
       this.onStatusChangeCallback?.("play", false);
@@ -652,11 +569,10 @@ var cdnmp4 = (function (exports, mp4box) {
       this.video.play();
       this.load();
     };
-
-    customDuration = null
-    setCustomDuration = (duration) => {
+    customDuration = null;
+    setCustomDuration = duration => {
       this.customDuration = duration;
-    }
+    };
 
     /* Load START */
     load = () => {
@@ -665,25 +581,22 @@ var cdnmp4 = (function (exports, mp4box) {
       if (ms.readyState !== "open") {
         return;
       }
-
       this.mp4boxfile = mp4box.createFile();
       this.addVideoEventListeners();
       this.mp4boxfile.onMoovStart = () => {
-        Log.info("Application", "Starting to parse movie information");
+        mp4box.Log.info("Application", "Starting to parse movie information");
       };
-      this.mp4boxfile.onReady = (info) => {
-        Log.info("Application", "Movie information received");
-
-        info.tracks.forEach( (track) => {
+      this.mp4boxfile.onReady = info => {
+        mp4box.Log.info("Application", "Movie information received");
+        info.tracks.forEach(track => {
           if (track.type === "video") {
             const durationInSeconds = track.duration / track.timescale;
             const frameRate = track.nb_samples / durationInSeconds;
             this.videoFps = Math.ceil(frameRate);
             const bytesPerSecond = track.size / durationInSeconds;
-            this.desiredChunkSize = Math.round(bytesPerSecond * this.SEGMENT_DURATION_SECS);
+            this.desiredChunkSize = bytesPerSecond * this.SEGMENT_DURATION_SECS;
           }
         });
-
         if (this.customDuration) {
           ms.duration = this.customDuration;
         } else {
@@ -703,18 +616,18 @@ var cdnmp4 = (function (exports, mp4box) {
           this.onStatusChangeCallback?.("initializeAllSourceBuffers", true);
         }
       };
-      this.mp4boxfile.onSidx = (sidx) => {
+      this.mp4boxfile.onSidx = sidx => {
         this.SHOW_LOGS && console.log(sidx);
       };
-      this.mp4boxfile.onItem = (item) => {
+      this.mp4boxfile.onItem = item => {
         var metaHandler = this.getMetaHandler();
         if (metaHandler.startsWith("mif1")) {
           var pitem = this.getPrimaryItem();
-          this.SHOW_LOGS &&
-            console.log("Found primary item in MP4 of type " + item.content_type);
+          this.SHOW_LOGS && console.log("Found primary item in MP4 of type " + item.content_type);
           if (pitem.id === item.id) {
-            this.video.poster = //
-              window.URL.createObjectURL(new Blob([item.data.buffer]));
+            this.video.poster =
+            //
+            window.URL.createObjectURL(new Blob([item.data.buffer]));
           }
         }
       };
@@ -722,16 +635,21 @@ var cdnmp4 = (function (exports, mp4box) {
         var sb = user;
         this.saveBuffer(buffer, `track-${id}-segment-${sb.segmentIndex}.m4s`);
         sb.segmentIndex++;
-        sb.pendingAppends.push({ id, buffer, sampleNum, is_last });
+        sb.pendingAppends.push({
+          id,
+          buffer,
+          sampleNum,
+          is_last
+        });
         const message = `Received new segment for track ${id} up to sample #${sampleNum}, segments pending append: ${sb.pendingAppends.length}`;
-        Log.info("Application", message);
+        mp4box.Log.info("Application", message);
         this.onUpdateEnd(sb, true, false);
       };
       this.mp4boxfile.onSamples = (id, user, samples) => {
         var sampleParser;
         var cue;
         var texttrack = user;
-        Log.info(`TextTrack #${id}`, `Received ${samples.length} new sample(s)`);
+        mp4box.Log.info(`TextTrack #${id}`, `Received ${samples.length} new sample(s)`);
         for (var j = 0; j < samples.length; j++) {
           var sample = samples[j];
           if (sample.description.type === "wvtt") {
@@ -739,89 +657,48 @@ var cdnmp4 = (function (exports, mp4box) {
             var cues = sampleParser.parseSample(sample.data);
             for (var i = 0; i < cues.length; i++) {
               var cueIn4 = cues[i];
-              cue = new VTTCue(
-                sample.dts / sample.timescale,
-                (sample.dts + sample.duration) / sample.timescale,
-                cueIn4.payl ? cueIn4.payl.text : ""
-              );
+              cue = new VTTCue(sample.dts / sample.timescale, (sample.dts + sample.duration) / sample.timescale, cueIn4.payl ? cueIn4.payl.text : "");
               texttrack.addCue(cue);
             }
-          } else if (
-            sample.description.type === "metx" ||
-            sample.description.type === "stpp"
-          ) {
+          } else if (sample.description.type === "metx" || sample.description.type === "stpp") {
             sampleParser = new mp4box.XMLSubtitlein4Parser();
             var xmlSubSample = sampleParser.parseSample(sample);
-            this.SHOW_LOGS &&
-              console.log(
-                "Parsed XML sample at time " +
-                  Log.getDurationString(sample.dts, sample.timescale) +
-                  " :",
-                xmlSubSample.document
-              );
-            cue = new VTTCue(
-              sample.dts / sample.timescale,
-              (sample.dts + sample.duration) / sample.timescale,
-              xmlSubSample.documentString
-            );
+            this.SHOW_LOGS && console.log("Parsed XML sample at time " + mp4box.Log.getDurationString(sample.dts, sample.timescale) + " :", xmlSubSample.document);
+            cue = new VTTCue(sample.dts / sample.timescale, (sample.dts + sample.duration) / sample.timescale, xmlSubSample.documentString);
             texttrack.addCue(cue);
             cue.is_sync = sample.is_sync;
             cue.onenter = this.processInbandCue;
-          } else if (
-            sample.description.type === "mett" ||
-            sample.description.type === "sbtt" ||
-            sample.description.type === "stxt"
-          ) {
+          } else if (sample.description.type === "mett" || sample.description.type === "sbtt" || sample.description.type === "stxt") {
             sampleParser = new mp4box.Textin4Parser();
             if (sample.description.txtC && j === 0) {
               if (sample.description.txtC.config) ; else {
-                sample.description.txtC.config = sampleParser.parseConfig(
-                  sample.description.txtC.data
-                );
+                sample.description.txtC.config = sampleParser.parseConfig(sample.description.txtC.data);
               }
-              this.SHOW_LOGS &&
-                console.log(
-                  "Parser Configuration: ",
-                  sample.description.txtC.config
-                );
+              this.SHOW_LOGS && console.log("Parser Configuration: ", sample.description.txtC.config);
               texttrack.config = sample.description.txtC.config;
             }
             var textSample = sampleParser.parseSample(sample);
-            this.SHOW_LOGS &&
-              console.log(
-                "Parsed text sample at time " +
-                  Log.getDurationString(sample.dts, sample.timescale) +
-                  " :",
-                textSample
-              );
-            cue = new VTTCue(
-              sample.dts / sample.timescale,
-              (sample.dts + sample.duration) / sample.timescale,
-              textSample
-            );
+            this.SHOW_LOGS && console.log("Parsed text sample at time " + mp4box.Log.getDurationString(sample.dts, sample.timescale) + " :", textSample);
+            cue = new VTTCue(sample.dts / sample.timescale, (sample.dts + sample.duration) / sample.timescale, textSample);
             texttrack.addCue(cue);
             cue.is_sync = sample.is_sync;
             cue.onenter = this.processInbandCue;
           }
         }
       };
-
       this.onStatusChangeCallback?.("load", false);
       this.onStatusChangeCallback?.("start", false);
       this.onStatusChangeCallback?.("stop", true);
-
       this.downloader.setCallback((buffer, end, error) => {
         var nextStart = 0;
         if (buffer) {
-          var progressVal = Math.ceil(
-            100 * (this.downloader.chunkStart / this.downloader.totalLength)
-          );
+          var progressVal = Math.ceil(100 * (this.downloader.chunkStart / this.downloader.totalLength));
           this.onStatusChangeCallback?.("progress", progressVal);
-          Log.info("Progress", `${progressVal}%`);
+          mp4box.Log.info("Progress", `${progressVal}%`);
           nextStart = this.mp4boxfile.appendBuffer(buffer, end);
         }
         if (end) {
-          Log.info("Progress", "100%");
+          mp4box.Log.info("Progress", "100%");
           this.onStatusChangeCallback?.("progress", 100);
           this.mp4boxfile.flush();
         } else {
@@ -829,22 +706,17 @@ var cdnmp4 = (function (exports, mp4box) {
         }
         if (error) {
           this.reset();
-          this.onErrorCallback?.(
-            "Download error",
-            error,
-            `EOF: ${end}, Buffer: ${buffer}`
-          );
-          Log.error("Progress", `Download error! - ${error}`);
+          this.onErrorCallback?.("Download error", error, `EOF: ${end}, Buffer: ${buffer}`);
+          mp4box.Log.error("Progress", `Download error! - ${error}`);
         }
       });
       this.downloader.setInterval(this.config.chunkTimeout); // TODO:
       this.downloader.setChunkSize(this.desiredChunkSize);
-      if (!this.config.url) Log.warn("No Video URL specified!");
+      if (!this.config.url) mp4box.Log.warn("No Video URL specified!");
       this.downloader.setUrl(this.config.url || "");
       this.onStatusChangeCallback?.("load", false);
       this.downloader.start();
     };
-
     initializeAllSourceBuffers = () => {
       this.SHOW_LOGS && console.log("Initializing all source buffers");
       if (this.movieInfo) {
@@ -858,7 +730,6 @@ var cdnmp4 = (function (exports, mp4box) {
         this.initializeSourceBuffers();
       }
     };
-
     initializeSourceBuffers = () => {
       this.SHOW_LOGS && console.log("Initializing source buffers");
       var initSegs = this.mp4boxfile.initializeSegmentation();
@@ -868,7 +739,7 @@ var cdnmp4 = (function (exports, mp4box) {
           sb.ms.pendingInits = 0;
         }
         sb.addEventListener("updateend", this.onInitAppended.bind(this));
-        Log.info(`MSE - SourceBuffer #${sb.id}`, "Appending initialization data");
+        mp4box.Log.info(`MSE - SourceBuffer #${sb.id}`, "Appending initialization data");
         sb.appendBuffer(initSegs[i].buffer);
         this.saveBuffer(initSegs[i].buffer, `track-${initSegs[i].id}-init.mp4`);
         sb.segmentIndex = 0;
@@ -886,11 +757,8 @@ var cdnmp4 = (function (exports, mp4box) {
       if (sb.ms.readyState === "open") {
         this.updateBufferedString(sb, "Init segment append ended");
         sb.sampleNum = 0;
-        sb.removeEventListener("updateend", (e) => this.onInitAppended(e));
-        sb.addEventListener(
-          "updateend",
-          this.onUpdateEnd.bind(this, sb, true, true)
-        );
+        sb.removeEventListener("updateend", e => this.onInitAppended(e));
+        sb.addEventListener("updateend", this.onUpdateEnd.bind(this, sb, true, true));
         /* In case there are already pending buffers we call onUpdateEnd to start appending them*/
         this.onUpdateEnd(sb, false, true);
         sb.ms.pendingInits--;
@@ -899,7 +767,6 @@ var cdnmp4 = (function (exports, mp4box) {
         }
       }
     }
-
     start = () => {
       this.SHOW_LOGS && console.log("Start");
       this.onStatusChangeCallback?.("start", false);
@@ -910,17 +777,8 @@ var cdnmp4 = (function (exports, mp4box) {
       this.mp4boxfile.start();
       this.downloader.resume();
     };
-
     onUpdateEnd(sb, isNotInit, isEndOfAppend) {
-      this.SHOW_LOGS &&
-        console.log(
-          "onUpdateEnd",
-          sb.id,
-          sb.ms.readyState,
-          sb.updating,
-          sb.pendingAppends.length,
-          sb.segmentIndex
-        );
+      this.SHOW_LOGS && console.log("onUpdateEnd", sb.id, sb.ms.readyState, sb.updating, sb.pendingAppends.length, sb.segmentIndex);
       if (isEndOfAppend === true) {
         if (isNotInit === true) {
           this.updateBufferedString(sb, "Update ended");
@@ -934,38 +792,26 @@ var cdnmp4 = (function (exports, mp4box) {
             if (sb.ms.readyState === "open" && !sb.updating) sb.ms.endOfStream();
           } catch (e) {
             const errId = `MSE - SourceBuffer #${sb.id}`;
-            Log.error(errId, e);
+            mp4box.Log.error(errId, e);
             this.onErrorCallback?.(errId, e, sb);
           }
         }
       }
-      if (
-        sb.ms.readyState === "open" &&
-        sb.updating === false &&
-        sb.pendingAppends.length > 0
-      ) {
+      if (sb.ms.readyState === "open" && sb.updating === false && sb.pendingAppends.length > 0) {
         var obj = sb.pendingAppends.shift();
-        Log.info(
-          `MSE - SourceBuffer #${sb.id}`,
-          `Appending new buffer, pending: ${sb.pendingAppends.length}`
-        );
+        mp4box.Log.info(`MSE - SourceBuffer #${sb.id}`, `Appending new buffer, pending: ${sb.pendingAppends.length}`);
         sb.sampleNum = obj.sampleNum;
         sb.is_last = obj.is_last;
         sb.appendBuffer(obj.buffer);
       }
     }
-
     updateBufferedString = (sb, string) => {
-      this.SHOW_LOGS &&
-        console.log("updateBufferedString", sb.id, sb.ms.readyState);
+      this.SHOW_LOGS && console.log("updateBufferedString", sb.id, sb.ms.readyState);
       var rangeString;
       if (sb.ms.readyState === "open") {
-        rangeString = Log.printRanges(sb.buffered);
-        const currTime = Log.getDurationString(this.video.currentTime, 1);
-        Log.info(
-          `MSE - SourceBuffer #${sb.id}`,
-          `${string}, updating: ${sb.updating}, currentTime: ${currTime}, buffered: ${rangeString}, pending: ${sb.pendingAppends.length}`
-        );
+        rangeString = mp4box.Log.printRanges(sb.buffered);
+        const currTime = mp4box.Log.getDurationString(this.video.currentTime, 1);
+        mp4box.Log.info(`MSE - SourceBuffer #${sb.id}`, `${string}, updating: ${sb.updating}, currentTime: ${currTime}, buffered: ${rangeString}, pending: ${sb.pendingAppends.length}`);
         // if (sb.bufferTd === undefined) { // TODO: miss
         //   sb.bufferTd = document.getElementById("buffer" + sb.id);
         // }
@@ -975,7 +821,7 @@ var cdnmp4 = (function (exports, mp4box) {
     /* SB Append END */
 
     /* Buffer Management START */
-    setShouldSaveBuffers = (shouldSaveBuffers) => {
+    setShouldSaveBuffers = shouldSaveBuffers => {
       this.shouldSaveBuffers = shouldSaveBuffers;
     };
     saveBuffer = (buffer, name) => {
@@ -985,8 +831,7 @@ var cdnmp4 = (function (exports, mp4box) {
         d.save(name);
       }
     };
-
-    addSourceBufferListener = (info) => {
+    addSourceBufferListener = info => {
       this.SHOW_LOGS && console.log("addSourceBufferListener");
       // for (var i = 0; i < info.tracks.length; i++) {
       //   var track = info.tracks[i];
@@ -1015,7 +860,6 @@ var cdnmp4 = (function (exports, mp4box) {
       //   );
       // }
     };
-
     addBuffer = (video, mp4track) => {
       this.SHOW_LOGS && console.log("addBuffer", mp4track.id);
       var sb;
@@ -1053,10 +897,7 @@ var cdnmp4 = (function (exports, mp4box) {
       // }
       if (MediaSource.isTypeSupported(mime)) {
         try {
-          Log.info(
-            `MSE - SourceBuffer #${track_id}`,
-            `Creation with type "${mime}"`
-          );
+          mp4box.Log.info(`MSE - SourceBuffer #${track_id}`, `Creation with type "${mime}"`);
           sb = ms.addSourceBuffer(mime);
           // if (trackDefaultSupport) {
           //   // TODO:
@@ -1064,7 +905,7 @@ var cdnmp4 = (function (exports, mp4box) {
           // }
           sb.addEventListener("error", function (e) {
             const errId = `MSE - SourceBuffer #${track_id}`;
-            Log.error(errId, e);
+            mp4box.Log.error(errId, e);
             this.onErrorCallback?.(errId, e);
           });
           sb.ms = ms;
@@ -1076,17 +917,11 @@ var cdnmp4 = (function (exports, mp4box) {
         } catch (e) {
           const errId = `MSE SourceBuffer #${track_id}`;
           const message = `Cannot create buffer with type '${mime}'`;
-          Log.error(errId, message, e);
+          mp4box.Log.error(errId, message, e);
           this.onErrorCallback?.(errId, e, message);
         }
       } else {
-        Log.warn(
-          "MSE",
-          "MIME type '" +
-            mime +
-            "' not supported for creation of a SourceBuffer for track id " +
-            track_id
-        );
+        mp4box.Log.warn("MSE", "MIME type '" + mime + "' not supported for creation of a SourceBuffer for track id " + track_id);
         // TODO: miss::subtitles
         // var i;
         // let foundTextTrack = false;
@@ -1123,13 +958,12 @@ var cdnmp4 = (function (exports, mp4box) {
         // }
       }
     };
-
     removeBuffer = (video, track_id) => {
       this.SHOW_LOGS && console.log("removeBuffer", track_id);
       var i;
       var sb;
       var ms = video.ms;
-      Log.info(`MSE - SourceBuffer #${track_id}`, "Removing buffer");
+      mp4box.Log.info(`MSE - SourceBuffer #${track_id}`, "Removing buffer");
       var foundSb = false;
       for (i = 0; i < ms.sourceBuffers.length; i++) {
         sb = ms.sourceBuffers[i];
@@ -1160,7 +994,7 @@ var cdnmp4 = (function (exports, mp4box) {
     /* Buffer Management END */
 
     /* Subtitles START */
-    initTrackViewer = (track) => {
+    initTrackViewer = track => {
       this.SHOW_LOGS && console.log("initTrackViewer", track.id);
       // TODO: miss::subtitles
       // if (track.mime === "image/x3d+xml" && typeof x3dom === "undefined") {
@@ -1205,59 +1039,66 @@ var cdnmp4 = (function (exports, mp4box) {
         load: this.load,
         start: this.start,
         initializeAllSourceBuffers: this.initializeAllSourceBuffers,
-        initializeSourceBuffers: this.initializeSourceBuffers,
+        initializeSourceBuffers: this.initializeSourceBuffers
       };
     }
 
     /** Info START */
-    generateMovieInfo = (info) => {
+    generateMovieInfo = info => {
       const fileLength = this.downloader.getFileLength();
-      const bitrate = Math.floor(
-        (fileLength * 8 * info.timescale) / (info.duration * 1000)
-      );
-
-      const durationStr = (dur, timescale) =>
-        timescale ? Log.getDurationString(dur, timescale) : ``;
-      const actualTime =
-        `${info.duration}/${info.timescale} ` +
-        durationStr(info.duration, info.timescale);
-      const fragDurationStr = //
-        durationStr(info.fragment_duration, info.timescale);
-
+      const bitrate = Math.floor(fileLength * 8 * info.timescale / (info.duration * 1000));
+      const durationStr = (dur, timescale) => timescale ? mp4box.Log.getDurationString(dur, timescale) : ``;
+      const actualTime = `${info.duration}/${info.timescale} ` + durationStr(info.duration, info.timescale);
+      const fragDurationStr =
+      //
+      durationStr(info.fragment_duration, info.timescale);
       const movieInfo = {
         header: "Movie Info",
         fileLength: 0,
-        tableRows: [
-          {
-            label: "File Size / Bitrate",
-            value: `${fileLength} bytes / ${bitrate} kbps`,
-          },
-          { label: "Duration / Timescale", value: actualTime },
-          { label: "Brands (major/compatible)", value: info.brands },
-          { label: "MIME", value: info.mime },
-          { label: "Progressive", value: info.isProgressive },
-          { label: "Fragmented", value: info.isFragmented },
-          { label: "MPEG-4 IOD", value: info.hasIOD },
-          {
-            label: "Fragmented duration",
-            value:
-              info.isFragmented && `${info.fragment_duration} ${fragDurationStr}`,
-          },
-          { label: "Creation Date", value: this.dateFmt(info.modified) },
-          { label: "Last Modified", value: this.dateFmt(info.modified) },
-        ],
+        tableRows: [{
+          label: "File Size / Bitrate",
+          value: `${fileLength} bytes / ${bitrate} kbps`
+        }, {
+          label: "Duration / Timescale",
+          value: actualTime
+        }, {
+          label: "Brands (major/compatible)",
+          value: info.brands
+        }, {
+          label: "MIME",
+          value: info.mime
+        }, {
+          label: "Progressive",
+          value: info.isProgressive
+        }, {
+          label: "Fragmented",
+          value: info.isFragmented
+        }, {
+          label: "MPEG-4 IOD",
+          value: info.hasIOD
+        }, {
+          label: "Fragmented duration",
+          value: info.isFragmented && `${info.fragment_duration} ${fragDurationStr}`
+        }, {
+          label: "Creation Date",
+          value: this.dateFmt(info.modified)
+        }, {
+          label: "Last Modified",
+          value: this.dateFmt(info.modified)
+        }],
         trackInfo: [],
-        allInfo: info,
+        allInfo: info
       };
-
       const trackTypes = ["Video", "Audio", "Subtitle", "Metadata", "Other"];
       for (const type of trackTypes) {
         const typeKey = `${type.toLowerCase()}Tracks`;
         if (info[typeKey]) {
-          movieInfo.trackInfo.push({ type: type, tracks: info[typeKey] });
+          movieInfo.trackInfo.push({
+            type: type,
+            tracks: info[typeKey]
+          });
         }
       }
-
       this.onMovieInfoCallback?.(movieInfo);
     };
 
@@ -1269,9 +1110,8 @@ var cdnmp4 = (function (exports, mp4box) {
       const trackInfo = {
         videoTracks: [],
         audioTracks: [],
-        textTracks: [],
+        textTracks: []
       };
-
       for (let i = 0; i < video.videoTracks.length; i++) {
         trackInfo.videoTracks.push({
           id: video.videoTracks[i].id,
@@ -1279,10 +1119,9 @@ var cdnmp4 = (function (exports, mp4box) {
           kind: video.videoTracks[i].kind,
           label: video.videoTracks[i].label,
           language: video.videoTracks[i].language,
-          selected: video.videoTracks[i].selected,
+          selected: video.videoTracks[i].selected
         });
       }
-
       for (let i = 0; i < video.audioTracks.length; i++) {
         trackInfo.audioTracks.push({
           id: video.audioTracks[i].id,
@@ -1290,10 +1129,9 @@ var cdnmp4 = (function (exports, mp4box) {
           kind: video.audioTracks[i].kind,
           label: video.audioTracks[i].label,
           language: video.audioTracks[i].language,
-          enabled: video.audioTracks[i].enabled,
+          enabled: video.audioTracks[i].enabled
         });
       }
-
       for (let i = 0; i < video.textTracks.length; i++) {
         trackInfo.textTracks.push({
           id: video.textTracks[i].id,
@@ -1301,10 +1139,9 @@ var cdnmp4 = (function (exports, mp4box) {
           kind: video.textTracks[i].kind,
           label: video.textTracks[i].label,
           language: video.textTracks[i].language,
-          mode: video.textTracks[i].mode,
+          mode: video.textTracks[i].mode
         });
       }
-
       this.onTrackInfoCallback?.(trackInfo);
     }
 
@@ -1314,13 +1151,15 @@ var cdnmp4 = (function (exports, mp4box) {
      * @returns {Object} - Object with 'date' and 'time' properties.
      */
     dateFmt(date) {
-      if (!date) return { date: "", time: "" };
-
-      const formattedDate = {
-        date: date.toISOString().slice(0, 10), // YYYY-MM-DD
-        time: date.toTimeString().slice(0, 5), // hh:mm
+      if (!date) return {
+        date: "",
+        time: ""
       };
-
+      const formattedDate = {
+        date: date.toISOString().slice(0, 10),
+        // YYYY-MM-DD
+        time: date.toTimeString().slice(0, 5) // hh:mm
+      };
       return formattedDate;
     }
     /** Info END */
@@ -1346,4 +1185,4 @@ var cdnmp4 = (function (exports, mp4box) {
 
   return exports;
 
-});
+})({}, mp4box);
