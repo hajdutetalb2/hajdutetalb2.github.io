@@ -1191,4 +1191,4 @@ var cdnmp4 = (function (exports, mp4box) {
 
   return exports;
 
-})({}, mp4box);
+});
