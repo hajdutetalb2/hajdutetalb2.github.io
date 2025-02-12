@@ -94,7 +94,7 @@ var cdnmp4 = (function (exports, mp4box) {
           dl.eof = true;
         }
         if (dl.eof === true) {
-          mp4box.Log.info("Downloader", "File download done.");
+          Log.info("Downloader", "File download done.");
           this.callback(null, true);
           return;
         }
@@ -170,7 +170,7 @@ var cdnmp4 = (function (exports, mp4box) {
           } = _ref;
           let buffer = buf;
           if (totalLength) dl.totalLength = totalLength;else throw new Error("file byte length not available");
-          mp4box.Log.info("Downloader", "Received data range. ByteLength: " + buffer.byteLength);
+          Log.info("Downloader", "Received data range. ByteLength: " + buffer.byteLength);
           const endByte = start + buffer.byteLength - 1;
           dl.eof = endByte >= dl.totalLength;
           // dl.eof =
@@ -187,7 +187,7 @@ var cdnmp4 = (function (exports, mp4box) {
             //   console.log(
             //     `EOF Reason: Total Length reached, Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.totalLength.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`
             //   )
-          } else mp4box.Log.info(`EOF:${dl.eof}`, `Received Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.chunkSize.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`);
+          } else Log.info(`EOF:${dl.eof}`, `Received Buffer Length: ${buffer.byteLength.toLocaleString()}, Expected Length: ${dl.chunkSize.toLocaleString()}, Total Length: ${dl.totalLength.toLocaleString()}`);
           buffer.fileStart = dl.chunkStart;
           if (!buffer.fileStart) {
             buffer = buffer.slice(0);
@@ -202,7 +202,7 @@ var cdnmp4 = (function (exports, mp4box) {
               timeoutDuration = dl.computeWaitingTimeFromBuffer(dl.videoElement);
             }
             if (dl.setDownloadTimeoutCallback) dl.setDownloadTimeoutCallback(timeoutDuration);
-            mp4box.Log.info("Downloader", "Next download scheduled in " + Math.floor(timeoutDuration) + " ms.");
+            Log.info("Downloader", "Next download scheduled in " + Math.floor(timeoutDuration) + " ms.");
             dl.timeoutID = window.setTimeout(dl.getFile.bind(dl), timeoutDuration);
           } else {
             dl.isActive = false;
@@ -216,13 +216,13 @@ var cdnmp4 = (function (exports, mp4box) {
         });
       });
       _defineProperty(this, "start", () => {
-        mp4box.Log.info("Downloader", "Starting file download");
+        Log.info("Downloader", "Starting file download");
         this.chunkStart = 0;
         this.resume();
         return this;
       });
       _defineProperty(this, "resume", () => {
-        mp4box.Log.info("Downloader", "Resuming file download");
+        Log.info("Downloader", "Resuming file download");
         this.isActive = true;
         if (this.chunkSize === 0) {
           this.chunkSize = Infinity;
@@ -232,7 +232,7 @@ var cdnmp4 = (function (exports, mp4box) {
       });
       _defineProperty(this, "stop", () => {
         this.abortController?.abort();
-        mp4box.Log.info("Downloader", "Stopping file download");
+        Log.info("Downloader", "Stopping file download");
         this.isActive = false;
         if (this.timeoutID) {
           window.clearTimeout(this.timeoutID);
@@ -286,15 +286,15 @@ var cdnmp4 = (function (exports, mp4box) {
       }
       duration = minEndRange - maxStartRange;
       ratio = (currentTime - maxStartRange) / duration;
-      mp4box.Log.info("Demo", "Playback position (" + mp4box.Log.getDurationString(currentTime) + ") in current buffer [" + mp4box.Log.getDurationString(maxStartRange) + "," + mp4box.Log.getDurationString(minEndRange) + "]: " + Math.floor(ratio * 100) + "%");
+      Log.info("Demo", "Playback position (" + Log.getDurationString(currentTime) + ") in current buffer [" + Log.getDurationString(maxStartRange) + "," + Log.getDurationString(minEndRange) + "]: " + Math.floor(ratio * 100) + "%");
       if (ratio >= 3 / (playbackRate + 3)) {
-        mp4box.Log.info("Demo", "Downloading immediately new data!");
+        Log.info("Demo", "Downloading immediately new data!");
         // when the currentTime of the video is at more than 3/4 of the buffered range (for a playback rate of 1), immediately fetch a new buffer
         return 1; // return 1 ms (instead of 0) to be able to compute a non-infinite bitrate value
       } else {
         /* if not, wait for half (at playback rate of 1) of the remaining time in the buffer */
         wait = 1000 * (minEndRange - currentTime) / (2 * playbackRate);
-        mp4box.Log.info("Demo", "Waiting for " + mp4box.Log.getDurationString(wait, 1000) + " s for the next download");
+        Log.info("Demo", "Waiting for " + Log.getDurationString(wait, 1000) + " s for the next download");
         return wait;
       }
     }
@@ -402,7 +402,7 @@ var cdnmp4 = (function (exports, mp4box) {
         this.SHOW_LOGS && console.log("onWindowLoad");
         // TODO: If !video ...
         this.video.addEventListener("error", e => {
-          mp4box.Log.error("Video error", e);
+          Log.error("Video error", e);
           this.onErrorCallback?.("Video error", e);
         });
         this.video.playing = false;
@@ -483,17 +483,17 @@ var cdnmp4 = (function (exports, mp4box) {
         var ms = e.target;
         if (ms.video.error) {
           // TODO:
-          mp4box.Log.error("MSE", "Source closed, video error: " + ms.video.error.code);
+          Log.error("MSE", "Source closed, video error: " + ms.video.error.code);
           this.onErrorCallback?.(`MSE, Source closed, video error`, e);
         } else {
-          mp4box.Log.info("MSE", "Source closed, no error");
+          Log.info("MSE", "Source closed, no error");
         }
       });
       _defineProperty(this, "onSourceOpen", e => {
         this.SHOW_LOGS && console.log("onSourceOpen");
         var ms = e.target;
-        mp4box.Log.info("MSE", "Source opened");
-        mp4box.Log.debug("MSE", ms);
+        Log.info("MSE", "Source opened");
+        Log.debug("MSE", ms);
       });
       /* Reset END */
       _defineProperty(this, "stop", () => {
@@ -525,10 +525,10 @@ var cdnmp4 = (function (exports, mp4box) {
         this.mp4boxfile = mp4box.createFile();
         this.addVideoEventListeners();
         this.mp4boxfile.onMoovStart = () => {
-          mp4box.Log.info("Application", "Starting to parse movie information");
+          Log.info("Application", "Starting to parse movie information");
         };
         this.mp4boxfile.onReady = info => {
-          mp4box.Log.info("Application", "Movie information received");
+          Log.info("Application", "Movie information received");
           info.tracks.forEach(track => {
             if (track.type === "video") {
               const durationInSeconds = track.duration / track.timescale;
@@ -583,14 +583,14 @@ var cdnmp4 = (function (exports, mp4box) {
             is_last
           });
           const message = `Received new segment for track ${id} up to sample #${sampleNum}, segments pending append: ${sb.pendingAppends.length}`;
-          mp4box.Log.info("Application", message);
+          Log.info("Application", message);
           this.onUpdateEnd(sb, true, false);
         };
         this.mp4boxfile.onSamples = (id, user, samples) => {
           var sampleParser;
           var cue;
           var texttrack = user;
-          mp4box.Log.info(`TextTrack #${id}`, `Received ${samples.length} new sample(s)`);
+          Log.info(`TextTrack #${id}`, `Received ${samples.length} new sample(s)`);
           for (var j = 0; j < samples.length; j++) {
             var sample = samples[j];
             if (sample.description.type === "wvtt") {
@@ -604,7 +604,7 @@ var cdnmp4 = (function (exports, mp4box) {
             } else if (sample.description.type === "metx" || sample.description.type === "stpp") {
               sampleParser = new mp4box.XMLSubtitlein4Parser();
               var xmlSubSample = sampleParser.parseSample(sample);
-              this.SHOW_LOGS && console.log("Parsed XML sample at time " + mp4box.Log.getDurationString(sample.dts, sample.timescale) + " :", xmlSubSample.document);
+              this.SHOW_LOGS && console.log("Parsed XML sample at time " + Log.getDurationString(sample.dts, sample.timescale) + " :", xmlSubSample.document);
               cue = new VTTCue(sample.dts / sample.timescale, (sample.dts + sample.duration) / sample.timescale, xmlSubSample.documentString);
               texttrack.addCue(cue);
               cue.is_sync = sample.is_sync;
@@ -619,7 +619,7 @@ var cdnmp4 = (function (exports, mp4box) {
                 texttrack.config = sample.description.txtC.config;
               }
               var textSample = sampleParser.parseSample(sample);
-              this.SHOW_LOGS && console.log("Parsed text sample at time " + mp4box.Log.getDurationString(sample.dts, sample.timescale) + " :", textSample);
+              this.SHOW_LOGS && console.log("Parsed text sample at time " + Log.getDurationString(sample.dts, sample.timescale) + " :", textSample);
               cue = new VTTCue(sample.dts / sample.timescale, (sample.dts + sample.duration) / sample.timescale, textSample);
               texttrack.addCue(cue);
               cue.is_sync = sample.is_sync;
@@ -635,11 +635,11 @@ var cdnmp4 = (function (exports, mp4box) {
           if (buffer) {
             var progressVal = Math.ceil(100 * (this.downloader.chunkStart / this.downloader.totalLength));
             this.onStatusChangeCallback?.("progress", progressVal);
-            mp4box.Log.info("Progress", `${progressVal}%`);
+            Log.info("Progress", `${progressVal}%`);
             nextStart = this.mp4boxfile.appendBuffer(buffer, end);
           }
           if (end) {
-            mp4box.Log.info("Progress", "100%");
+            Log.info("Progress", "100%");
             this.onStatusChangeCallback?.("progress", 100);
             this.mp4boxfile.flush();
           } else {
@@ -648,12 +648,12 @@ var cdnmp4 = (function (exports, mp4box) {
           if (error) {
             this.reset();
             this.onErrorCallback?.("Download error", error, `EOF: ${end}, Buffer: ${buffer}`);
-            mp4box.Log.error("Progress", `Download error! - ${error}`);
+            Log.error("Progress", `Download error! - ${error}`);
           }
         });
         this.downloader.setInterval(this.config.chunkTimeout); // TODO:
         this.downloader.setChunkSize(this.desiredChunkSize);
-        if (!this.config.url) mp4box.Log.warn("No Video URL specified!");
+        if (!this.config.url) Log.warn("No Video URL specified!");
         this.downloader.setUrl(this.config.url || "");
         this.onStatusChangeCallback?.("load", false);
         this.downloader.start();
@@ -680,7 +680,7 @@ var cdnmp4 = (function (exports, mp4box) {
             sb.ms.pendingInits = 0;
           }
           sb.addEventListener("updateend", this.onInitAppended.bind(this));
-          mp4box.Log.info(`MSE - SourceBuffer #${sb.id}`, "Appending initialization data");
+          Log.info(`MSE - SourceBuffer #${sb.id}`, "Appending initialization data");
           sb.appendBuffer(initSegs[i].buffer);
           this.saveBuffer(initSegs[i].buffer, `track-${initSegs[i].id}-init.mp4`);
           sb.segmentIndex = 0;
@@ -703,9 +703,9 @@ var cdnmp4 = (function (exports, mp4box) {
         this.SHOW_LOGS && console.log("updateBufferedString", sb.id, sb.ms.readyState);
         var rangeString;
         if (sb.ms.readyState === "open") {
-          rangeString = mp4box.Log.printRanges(sb.buffered);
-          const currTime = mp4box.Log.getDurationString(this.video.currentTime, 1);
-          mp4box.Log.info(`MSE - SourceBuffer #${sb.id}`, `${string}, updating: ${sb.updating}, currentTime: ${currTime}, buffered: ${rangeString}, pending: ${sb.pendingAppends.length}`);
+          rangeString = Log.printRanges(sb.buffered);
+          const currTime = Log.getDurationString(this.video.currentTime, 1);
+          Log.info(`MSE - SourceBuffer #${sb.id}`, `${string}, updating: ${sb.updating}, currentTime: ${currTime}, buffered: ${rangeString}, pending: ${sb.pendingAppends.length}`);
           // if (sb.bufferTd === undefined) { // TODO: miss
           //   sb.bufferTd = document.getElementById("buffer" + sb.id);
           // }
@@ -790,7 +790,7 @@ var cdnmp4 = (function (exports, mp4box) {
         // }
         if (MediaSource.isTypeSupported(mime)) {
           try {
-            mp4box.Log.info(`MSE - SourceBuffer #${track_id}`, `Creation with type "${mime}"`);
+            Log.info(`MSE - SourceBuffer #${track_id}`, `Creation with type "${mime}"`);
             sb = ms.addSourceBuffer(mime);
             // if (trackDefaultSupport) {
             //   // TODO:
@@ -798,7 +798,7 @@ var cdnmp4 = (function (exports, mp4box) {
             // }
             sb.addEventListener("error", function (e) {
               const errId = `MSE - SourceBuffer #${track_id}`;
-              mp4box.Log.error(errId, e);
+              Log.error(errId, e);
               this.onErrorCallback?.(errId, e);
             });
             sb.ms = ms;
@@ -810,11 +810,11 @@ var cdnmp4 = (function (exports, mp4box) {
           } catch (e) {
             const errId = `MSE SourceBuffer #${track_id}`;
             const message = `Cannot create buffer with type '${mime}'`;
-            mp4box.Log.error(errId, message, e);
+            Log.error(errId, message, e);
             this.onErrorCallback?.(errId, e, message);
           }
         } else {
-          mp4box.Log.warn("MSE", "MIME type '" + mime + "' not supported for creation of a SourceBuffer for track id " + track_id);
+          Log.warn("MSE", "MIME type '" + mime + "' not supported for creation of a SourceBuffer for track id " + track_id);
           // TODO: miss::subtitles
           // var i;
           // let foundTextTrack = false;
@@ -856,7 +856,7 @@ var cdnmp4 = (function (exports, mp4box) {
         var i;
         var sb;
         var ms = video.ms;
-        mp4box.Log.info(`MSE - SourceBuffer #${track_id}`, "Removing buffer");
+        Log.info(`MSE - SourceBuffer #${track_id}`, "Removing buffer");
         var foundSb = false;
         for (i = 0; i < ms.sourceBuffers.length; i++) {
           sb = ms.sourceBuffers[i];
@@ -921,7 +921,7 @@ var cdnmp4 = (function (exports, mp4box) {
       _defineProperty(this, "generateMovieInfo", info => {
         const fileLength = this.downloader.getFileLength();
         const bitrate = Math.floor(fileLength * 8 * info.timescale / (info.duration * 1000));
-        const durationStr = (dur, timescale) => timescale ? mp4box.Log.getDurationString(dur, timescale) : ``;
+        const durationStr = (dur, timescale) => timescale ? Log.getDurationString(dur, timescale) : ``;
         const actualTime = `${info.duration}/${info.timescale} ` + durationStr(info.duration, info.timescale);
         const fragDurationStr =
         //
@@ -1033,7 +1033,7 @@ var cdnmp4 = (function (exports, mp4box) {
           }
         }
         /* Chrome fires twice the seeking event with the same value */
-        mp4box.Log.info("Application", "Seeking called to video time " + mp4box.Log.getDurationString(this.video.currentTime));
+        Log.info("Application", "Seeking called to video time " + Log.getDurationString(this.video.currentTime));
         this.downloader.stop();
         this.resetCues();
         seek_info = this.mp4boxfile.seek(this.video.currentTime, true);
@@ -1078,14 +1078,14 @@ var cdnmp4 = (function (exports, mp4box) {
             if (sb.ms.readyState === "open" && !sb.updating) sb.ms.endOfStream();
           } catch (e) {
             const errId = `MSE - SourceBuffer #${sb.id}`;
-            mp4box.Log.error(errId, e);
+            Log.error(errId, e);
             this.onErrorCallback?.(errId, e, sb);
           }
         }
       }
       if (sb.ms.readyState === "open" && sb.updating === false && sb.pendingAppends.length > 0) {
         var obj = sb.pendingAppends.shift();
-        mp4box.Log.info(`MSE - SourceBuffer #${sb.id}`, `Appending new buffer, pending: ${sb.pendingAppends.length}`);
+        Log.info(`MSE - SourceBuffer #${sb.id}`, `Appending new buffer, pending: ${sb.pendingAppends.length}`);
         sb.sampleNum = obj.sampleNum;
         sb.is_last = obj.is_last;
         sb.appendBuffer(obj.buffer);
